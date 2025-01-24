@@ -1,5 +1,132 @@
 export type CellValue = 'black' | 'white' | 'empty';
 export type Player = 'human' | 'computer';
+export type Difficulty = 'easy' | 'hard';
+
+// 各マスの重要度を表す評価テーブル
+export const POSITION_WEIGHTS = [
+  [120, -20, 20,  5,  5, 20, -20, 120],
+  [-20, -40, -5, -5, -5, -5, -40, -20],
+  [ 20,  -5, 15,  3,  3, 15,  -5,  20],
+  [  5,  -5,  3,  3,  3,  3,  -5,   5],
+  [  5,  -5,  3,  3,  3,  3,  -5,   5],
+  [ 20,  -5, 15,  3,  3, 15,  -5,  20],
+  [-20, -40, -5, -5, -5, -5, -40, -20],
+  [120, -20, 20,  5,  5, 20, -20, 120]
+];
+
+// 盤面の評価関数
+export const evaluateBoard = (board: CellValue[][], color: CellValue): number => {
+  let score = 0;
+  const opponent = getOppositeColor(color);
+
+  // 終盤かどうかを判断（空きマスが10個以下）
+  const emptyCount = board.flat().filter(cell => cell === 'empty').length;
+  const isEndgame = emptyCount <= 10;
+
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      if (board[row][col] === color) {
+        // 終盤は石数を重視
+        if (isEndgame) {
+          score += 100;
+        } else {
+          score += POSITION_WEIGHTS[row][col];
+        }
+      } else if (board[row][col] === opponent) {
+        if (isEndgame) {
+          score -= 100;
+        } else {
+          score -= POSITION_WEIGHTS[row][col];
+        }
+      }
+    }
+  }
+
+  // 有効手の数を評価に加える（終盤以外）
+  if (!isEndgame) {
+    const myMoves = getValidMoves(board, color).length;
+    const opponentMoves = getValidMoves(board, opponent).length;
+    score += (myMoves - opponentMoves) * 10;
+  }
+
+  return score;
+};
+
+// ミニマックスアルゴリズムによる最善手の探索
+export const findBestMove = (
+  board: CellValue[][],
+  color: CellValue,
+  depth: number
+): [number, number] => {
+  const validMoves = getValidMoves(board, color);
+  if (validMoves.length === 0) return [-1, -1];
+
+  let bestScore = -Infinity;
+  let bestMove = validMoves[0];
+
+  for (const [row, col] of validMoves) {
+    const newBoard = board.map(row => [...row]);
+    const flips = getFlippableCells(newBoard, row, col, color);
+    newBoard[row][col] = color;
+    flips.forEach(([r, c]) => {
+      newBoard[r][c] = color;
+    });
+
+    const score = minimax(newBoard, depth - 1, false, color, -Infinity, Infinity);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = [row, col];
+    }
+  }
+
+  return bestMove;
+};
+
+// ミニマックスアルゴリズム（アルファベータ枝刈り付き）
+const minimax = (
+  board: CellValue[][],
+  depth: number,
+  isMaximizing: boolean,
+  originalColor: CellValue,
+  alpha: number,
+  beta: number
+): number => {
+  if (depth === 0) {
+    return evaluateBoard(board, originalColor);
+  }
+
+  const currentColor = isMaximizing ? originalColor : getOppositeColor(originalColor);
+  const validMoves = getValidMoves(board, currentColor);
+
+  if (validMoves.length === 0) {
+    return evaluateBoard(board, originalColor);
+  }
+
+  let bestScore = isMaximizing ? -Infinity : Infinity;
+
+  for (const [row, col] of validMoves) {
+    const newBoard = board.map(row => [...row]);
+    const flips = getFlippableCells(newBoard, row, col, currentColor);
+    newBoard[row][col] = currentColor;
+    flips.forEach(([r, c]) => {
+      newBoard[r][c] = currentColor;
+    });
+
+    const score = minimax(newBoard, depth - 1, !isMaximizing, originalColor, alpha, beta);
+
+    if (isMaximizing) {
+      bestScore = Math.max(bestScore, score);
+      alpha = Math.max(alpha, bestScore);
+    } else {
+      bestScore = Math.min(bestScore, score);
+      beta = Math.min(beta, bestScore);
+    }
+
+    if (beta <= alpha) break;
+  }
+
+  return bestScore;
+};
 
 export interface GameState {
   board: CellValue[][];

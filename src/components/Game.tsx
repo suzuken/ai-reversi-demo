@@ -3,6 +3,7 @@ import Board from './Board';
 import {
   CellValue,
   Player,
+  Difficulty,
   GameState,
   createInitialBoard,
   isValidMove,
@@ -10,10 +11,13 @@ import {
   getValidMoves,
   calculateScore,
   getOppositeColor,
+  findBestMove,
 } from '../types';
 import '../Game.css';
 
 const Game: React.FC = () => {
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [gameStarted, setGameStarted] = useState(false);
   const [gameState, setGameState] = useState<GameState>({
     board: createInitialBoard(),
     currentPlayer: 'human',
@@ -62,17 +66,24 @@ const Game: React.FC = () => {
     const validMoves = getValidMoves(gameState.board, color);
     
     if (validMoves.length > 0) {
-      // 簡単な戦略: 最も多くの石を裏返せる手を選ぶ
-      let bestMove = validMoves[0];
-      let maxFlips = 0;
+      let bestMove: [number, number];
+      
+      if (difficulty === 'easy') {
+        // 簡単モード: 最も多くの石を裏返せる手を選ぶ
+        bestMove = validMoves[0];
+        let maxFlips = 0;
 
-      validMoves.forEach(([row, col]) => {
-        const flips = getFlippableCells(gameState.board, row, col, color).length;
-        if (flips > maxFlips) {
-          maxFlips = flips;
-          bestMove = [row, col];
-        }
-      });
+        validMoves.forEach(([row, col]) => {
+          const flips = getFlippableCells(gameState.board, row, col, color).length;
+          if (flips > maxFlips) {
+            maxFlips = flips;
+            bestMove = [row, col];
+          }
+        });
+      } else {
+        // 難しいモード: ミニマックスアルゴリズムで最善手を探索
+        bestMove = findBestMove(gameState.board, color, 4);
+      }
 
       setTimeout(() => {
         makeMove(bestMove[0], bestMove[1], color);
@@ -89,6 +100,43 @@ const Game: React.FC = () => {
   const validMoves = gameState.currentPlayer === 'human'
     ? getValidMoves(gameState.board, getCurrentColor('human'))
     : [];
+
+  const handleDifficultyChange = (newDifficulty: Difficulty) => {
+    setDifficulty(newDifficulty);
+    setGameStarted(true);
+    setGameState({
+      board: createInitialBoard(),
+      currentPlayer: 'human',
+      gameOver: false,
+      blackCount: 2,
+      whiteCount: 2,
+    });
+  };
+
+  if (!gameStarted) {
+    return (
+      <div className="game">
+        <h1>リバーシ</h1>
+        <div className="difficulty-selection">
+          <h2>難易度を選択してください</h2>
+          <div className="difficulty-buttons">
+            <button 
+              onClick={() => handleDifficultyChange('easy')}
+              className="difficulty-button"
+            >
+              かんたん
+            </button>
+            <button 
+              onClick={() => handleDifficultyChange('hard')}
+              className="difficulty-button"
+            >
+              むずかしい
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="game">

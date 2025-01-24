@@ -82,3 +82,41 @@
   background-color: #fff;
   border: 1px solid #000;
 }
+
+.difficulty-selection {
+  text-align: center;
+  margin: 20px;
+}
+
+.difficulty-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.difficulty-button {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  background-color: #4CAF50;
+  color: white;
+}
+
+.difficulty-button:hover {
+  background-color: #45a049;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 30px;
+}
+
+h2 {
+  color: #666;
+  font-size: 1.2em;
+  margin-bottom: 20px;
+}
