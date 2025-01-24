@@ -1,50 +1,71 @@
-# React + TypeScript + Vite
+# AI Reversi Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScriptで実装したリバーシ（オセロ）ゲームです。人間とコンピュータが対戦できます。
 
-Currently, two official plugins are available:
+## 機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- プレイヤー（黒）vs コンピュータ（白）の対戦
+- 8x8のゲームボード
+- 有効な手の可視化（半透明の白い点で表示）
+- リアルタイムのスコア表示
+- ターン表示
+- 自動的な勝敗判定
+- パスの自動判定と処理
 
-## Expanding the ESLint configuration
+## 技術スタック
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- React 18
+- TypeScript
+- Vite
+- CSS Modules
 
-- Configure the top-level `parserOptions` property like this:
+## コンピュータの思考ロジック
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+現在の実装では、シンプルな戦略を採用しています：
+- 各ターンで、最も多くの石を裏返せる手を選択
+- 有効な手がない場合は自動的にパス
+
+## セットアップと実行方法
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+その後、ブラウザで http://localhost:5173 にアクセスしてゲームを開始できます。
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## プロジェクト構造
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
 ```
+src/
+├── components/
+│   ├── Board.tsx    # ゲームボードのレイアウト
+│   ├── Cell.tsx     # 個々のマスの表示
+│   └── Game.tsx     # ゲームのメインロジック
+├── types.ts         # 型定義とゲームロジック
+├── Game.css         # スタイリング
+└── App.tsx          # アプリケーションのエントリーポイント
+```
+
+## ゲームの遊び方
+
+1. ゲーム開始時、プレイヤー（黒）の手番から始まります
+2. 有効な手は半透明の白い点で表示されます
+3. 点が表示されているマスをクリックすると石を置けます
+4. 石を置くと、挟まれた相手の石が自分の色に変わります
+5. その後、自動的にコンピュータが手を打ちます
+6. 有効な手がない場合は自動的にパスされます
+7. 両者とも打てる手がなくなるとゲーム終了です
+
+## 今後の改善案
+
+- コンピュータの思考ロジックの強化
+  - 評価関数の導入
+  - 探索アルゴリズムの実装
+- 難易度設定の追加
+- ゲーム履歴の表示
+- 手の巻き戻し機能
+- 2人プレイモードの追加
