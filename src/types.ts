@@ -1,6 +1,6 @@
 export type CellValue = 'black' | 'white' | 'empty';
 export type Player = 'human' | 'computer';
-export type Difficulty = 'easy' | 'hard';
+export type Difficulty = 'beginner' | 'easy' | 'hard' | 'expert';
 
 // 各マスの重要度を表す評価テーブル
 export const POSITION_WEIGHTS = [
@@ -13,6 +13,82 @@ export const POSITION_WEIGHTS = [
   [-20, -40, -5, -5, -5, -5, -40, -20],
   [120, -20, 20,  5,  5, 20, -20, 120]
 ];
+
+// 強化された評価関数（鬼神級用）
+export const evaluateBoardExpert = (board: CellValue[][], color: CellValue): number => {
+  let score = 0;
+  const opponent = getOppositeColor(color);
+  const emptyCount = board.flat().filter(cell => cell === 'empty').length;
+  const isEndgame = emptyCount <= 10;
+  
+  // 1. 基本的な位置評価と石数
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      if (board[row][col] === color) {
+        if (isEndgame) {
+          score += 100;
+        } else {
+          score += POSITION_WEIGHTS[row][col];
+        }
+      } else if (board[row][col] === opponent) {
+        if (isEndgame) {
+          score -= 100;
+        } else {
+          score -= POSITION_WEIGHTS[row][col];
+        }
+      }
+    }
+  }
+  
+  // 2. モビリティ評価（有効手の数）
+  if (!isEndgame) {
+    const myMoves = getValidMoves(board, color).length;
+    const opponentMoves = getValidMoves(board, opponent).length;
+    score += (myMoves - opponentMoves) * 15;
+  }
+  
+  // 3. 安定性評価（隅と辺の制御）
+  const corners = [[0,0], [0,7], [7,0], [7,7]];
+  corners.forEach(([row, col]) => {
+    if (board[row][col] === color) {
+      score += 500;
+    } else if (board[row][col] === opponent) {
+      score -= 500;
+    }
+  });
+  
+  // 4. 隅周辺のX位置とC位置のペナルティ
+  const dangerousPositions = [[0,1], [1,0], [1,1], [0,6], [1,6], [1,7], [6,0], [6,1], [7,1], [6,6], [6,7], [7,6]];
+  dangerousPositions.forEach(([row, col]) => {
+    const corner = findNearestCorner(row, col);
+    if (board[corner[0]][corner[1]] === 'empty') {
+      if (board[row][col] === color) {
+        score -= 100;
+      } else if (board[row][col] === opponent) {
+        score += 100;
+      }
+    }
+  });
+  
+  // 5. パリティ評価（終盤での最後の手の優位性）
+  if (isEndgame && emptyCount <= 6) {
+    if (emptyCount % 2 === 1) {
+      score += 50; // 奇数なら有利
+    } else {
+      score -= 50; // 偶数なら不利
+    }
+  }
+  
+  return score;
+};
+
+// 隅周辺の危険位置から最も近い隅を見つける
+const findNearestCorner = (row: number, col: number): [number, number] => {
+  if (row <= 1 && col <= 1) return [0, 0];
+  if (row <= 1 && col >= 6) return [0, 7];
+  if (row >= 6 && col <= 1) return [7, 0];
+  return [7, 7];
+};
 
 // 盤面の評価関数
 export const evaluateBoard = (board: CellValue[][], color: CellValue): number => {
@@ -50,6 +126,82 @@ export const evaluateBoard = (board: CellValue[][], color: CellValue): number =>
   }
 
   return score;
+};
+
+// 鬼神級用の強化されたミニマックス
+export const findBestMoveExpert = (
+  board: CellValue[][],
+  color: CellValue,
+  depth: number
+): [number, number] => {
+  const validMoves = getValidMoves(board, color);
+  if (validMoves.length === 0) return [-1, -1];
+
+  let bestScore = -Infinity;
+  let bestMove = validMoves[0];
+
+  for (const [row, col] of validMoves) {
+    const newBoard = board.map(row => [...row]);
+    const flips = getFlippableCells(newBoard, row, col, color);
+    newBoard[row][col] = color;
+    flips.forEach(([r, c]) => {
+      newBoard[r][c] = color;
+    });
+
+    const score = minimaxExpert(newBoard, depth - 1, false, color, -Infinity, Infinity);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = [row, col];
+    }
+  }
+
+  return bestMove;
+};
+
+// 鬼神級用のミニマックスアルゴリズム（改良された評価関数使用）
+const minimaxExpert = (
+  board: CellValue[][],
+  depth: number,
+  isMaximizing: boolean,
+  originalColor: CellValue,
+  alpha: number,
+  beta: number
+): number => {
+  if (depth === 0) {
+    return evaluateBoardExpert(board, originalColor);
+  }
+
+  const currentColor = isMaximizing ? originalColor : getOppositeColor(originalColor);
+  const validMoves = getValidMoves(board, currentColor);
+
+  if (validMoves.length === 0) {
+    return evaluateBoardExpert(board, originalColor);
+  }
+
+  let bestScore = isMaximizing ? -Infinity : Infinity;
+
+  for (const [row, col] of validMoves) {
+    const newBoard = board.map(row => [...row]);
+    const flips = getFlippableCells(newBoard, row, col, currentColor);
+    newBoard[row][col] = currentColor;
+    flips.forEach(([r, c]) => {
+      newBoard[r][c] = currentColor;
+    });
+
+    const score = minimaxExpert(newBoard, depth - 1, !isMaximizing, originalColor, alpha, beta);
+
+    if (isMaximizing) {
+      bestScore = Math.max(bestScore, score);
+      alpha = Math.max(alpha, bestScore);
+    } else {
+      bestScore = Math.min(bestScore, score);
+      beta = Math.min(beta, bestScore);
+    }
+
+    if (beta <= alpha) break;
+  }
+
+  return bestScore;
 };
 
 // ミニマックスアルゴリズムによる最善手の探索

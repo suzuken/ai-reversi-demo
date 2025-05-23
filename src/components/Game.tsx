@@ -12,6 +12,7 @@ import {
   calculateScore,
   getOppositeColor,
   findBestMove,
+  findBestMoveExpert,
 } from '../types';
 import '../Game.css';
 
@@ -67,8 +68,14 @@ const Game: React.FC = () => {
     
     if (validMoves.length > 0) {
       let bestMove: [number, number];
+      let thinkingTime = 1000;
       
-      if (difficulty === 'easy') {
+      if (difficulty === 'beginner') {
+        // 入門級: ランダム選択
+        const randomIndex = Math.floor(Math.random() * validMoves.length);
+        bestMove = validMoves[randomIndex];
+        thinkingTime = 500;
+      } else if (difficulty === 'easy') {
         // 簡単モード: 最も多くの石を裏返せる手を選ぶ
         bestMove = validMoves[0];
         let maxFlips = 0;
@@ -80,14 +87,22 @@ const Game: React.FC = () => {
             bestMove = [row, col];
           }
         });
-      } else {
+        thinkingTime = 800;
+      } else if (difficulty === 'hard') {
         // 難しいモード: ミニマックスアルゴリズムで最善手を探索
         bestMove = findBestMove(gameState.board, color, 4);
+        thinkingTime = 1200;
+      } else if (difficulty === 'expert') {
+        // 鬼神級: 強化されたミニマックスで深い探索
+        const emptyCount = gameState.board.flat().filter(cell => cell === 'empty').length;
+        const depth = emptyCount <= 20 ? 8 : 6; // 終盤では深く読む
+        bestMove = findBestMoveExpert(gameState.board, color, depth);
+        thinkingTime = 1500;
       }
 
       setTimeout(() => {
         makeMove(bestMove[0], bestMove[1], color);
-      }, 1000);
+      }, thinkingTime);
     }
   };
 
@@ -121,16 +136,32 @@ const Game: React.FC = () => {
           <h2>難易度を選択してください</h2>
           <div className="difficulty-buttons">
             <button 
+              onClick={() => handleDifficultyChange('beginner')}
+              className="difficulty-button beginner"
+            >
+              入門級
+              <div className="difficulty-description">ランダム選択</div>
+            </button>
+            <button 
               onClick={() => handleDifficultyChange('easy')}
-              className="difficulty-button"
+              className="difficulty-button easy"
             >
               かんたん
+              <div className="difficulty-description">貪欲アルゴリズム</div>
             </button>
             <button 
               onClick={() => handleDifficultyChange('hard')}
-              className="difficulty-button"
+              className="difficulty-button hard"
             >
               むずかしい
+              <div className="difficulty-description">ミニマックス4手先</div>
+            </button>
+            <button 
+              onClick={() => handleDifficultyChange('expert')}
+              className="difficulty-button expert"
+            >
+              鬼神級
+              <div className="difficulty-description">強化AI 6-8手先</div>
             </button>
           </div>
         </div>
