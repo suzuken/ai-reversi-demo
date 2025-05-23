@@ -89,25 +89,70 @@
 }
 
 .difficulty-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   justify-content: center;
   margin-top: 20px;
+  max-width: 600px;
 }
 
 .difficulty-button {
-  padding: 15px 30px;
-  font-size: 1.2em;
+  padding: 20px 25px;
+  font-size: 1.1em;
+  font-weight: bold;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  background-color: #4CAF50;
+  transition: all 0.3s;
   color: white;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
 }
 
 .difficulty-button:hover {
-  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+.difficulty-button.beginner {
+  background: linear-gradient(135deg, #81C784, #4CAF50);
+}
+
+.difficulty-button.easy {
+  background: linear-gradient(135deg, #64B5F6, #2196F3);
+}
+
+.difficulty-button.hard {
+  background: linear-gradient(135deg, #FFB74D, #FF9800);
+}
+
+.difficulty-button.expert {
+  background: linear-gradient(135deg, #F06292, #E91E63);
+}
+
+.difficulty-button.beginner:hover {
+  background: linear-gradient(135deg, #66BB6A, #388E3C);
+}
+
+.difficulty-button.easy:hover {
+  background: linear-gradient(135deg, #42A5F5, #1976D2);
+}
+
+.difficulty-button.hard:hover {
+  background: linear-gradient(135deg, #FFA726, #F57C00);
+}
+
+.difficulty-button.expert:hover {
+  background: linear-gradient(135deg, #EC407A, #C2185B);
+}
+
+.difficulty-description {
+  font-size: 0.8em;
+  font-weight: normal;
+  margin-top: 5px;
+  opacity: 0.9;
 }
 
 h1 {
