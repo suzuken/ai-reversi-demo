@@ -1,6 +1,6 @@
 export type CellValue = 'black' | 'white' | 'empty';
 export type Player = 'human' | 'computer';
-export type Difficulty = 'easy' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
 // 各マスの重要度を表す評価テーブル
 export const POSITION_WEIGHTS = [
