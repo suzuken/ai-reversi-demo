@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Board from './Board';
 import {
   CellValue,
@@ -30,7 +30,7 @@ const Game: React.FC = () => {
     return player === 'human' ? 'black' : 'white';
   };
 
-  const makeMove = (row: number, col: number, color: CellValue) => {
+  const makeMove = useCallback((row: number, col: number, color: CellValue) => {
     const newBoard = gameState.board.map(row => [...row]);
     newBoard[row][col] = color;
 
@@ -50,7 +50,7 @@ const Game: React.FC = () => {
       blackCount: black,
       whiteCount: white,
     }));
-  };
+  }, [gameState.board]);
 
   const handleCellClick = (row: number, col: number) => {
     if (gameState.gameOver || gameState.currentPlayer !== 'human') return;
@@ -61,7 +61,7 @@ const Game: React.FC = () => {
     }
   };
 
-  const computerMove = () => {
+  const computerMove = useCallback(() => {
     const color = getCurrentColor('computer');
     const validMoves = getValidMoves(gameState.board, color);
     
@@ -80,6 +80,9 @@ const Game: React.FC = () => {
             bestMove = [row, col];
           }
         });
+      } else if (difficulty === 'medium') {
+        // 普通モード: ミニマックスアルゴリズムで2手先まで読む
+        bestMove = findBestMove(gameState.board, color, 2);
       } else {
         // 難しいモード: ミニマックスアルゴリズムで最善手を探索
         bestMove = findBestMove(gameState.board, color, 4);
@@ -89,13 +92,13 @@ const Game: React.FC = () => {
         makeMove(bestMove[0], bestMove[1], color);
       }, 1000);
     }
-  };
+  }, [gameState.board, difficulty, makeMove]);
 
   useEffect(() => {
     if (gameState.currentPlayer === 'computer' && !gameState.gameOver) {
       computerMove();
     }
-  }, [gameState.currentPlayer, gameState.gameOver]);
+  }, [gameState.currentPlayer, gameState.gameOver, computerMove]);
 
   const validMoves = gameState.currentPlayer === 'human'
     ? getValidMoves(gameState.board, getCurrentColor('human'))
@@ -125,6 +128,12 @@ const Game: React.FC = () => {
               className="difficulty-button"
             >
               かんたん
+            </button>
+            <button 
+              onClick={() => handleDifficultyChange('medium')}
+              className="difficulty-button"
+            >
+              ふつう
             </button>
             <button 
               onClick={() => handleDifficultyChange('hard')}
